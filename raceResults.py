@@ -2,30 +2,60 @@ import sys
 import os
 import json
 
+from datetime import timedelta
+
+point_scale = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
 
 
-def get_race_over_timestamp(json_laps):
-    """get the first player to reach the number of race laps
-       => this is the winner
+class Driver:
+    total_laps = 0
+    finished_tm = 0
+    place = -1
+    name = ''
+    fastest_lap = None
 
-    Args:
-        json_laps ([type]): [description]
 
-    Returns:
-        [int]: timestamp of race finish, could be None on incomplete dataset
-    """
+def millis_to_laptime(millis: int):
 
-    # cannot use lapCount, as this is not guaranteed to be the leaders lapCount
-    total_lap_cnt = json_laps[-1].get('lapNumber', None)
+    td = timedelta(milliseconds=millis)
 
-    # iterating backwards would save iterations
-    # but who cares about performances when using python...
+    secs = td.seconds
+    mins = int(secs/60) # get full minutes
+    secs -= (mins*60) # subtract the minutes from seconds
+    secs += td.microseconds/1_000_000 # add ms
+
+    
+    output = '{:d}:{:06.3f}'.format(mins, secs)
+    return output
+
+
+
+def map_drivers(json_laps):
+    drivers = {}
+
+    # overwriting the 'old' laps of each driver with more recent ones
     for lap in json_laps:
-        if int(lap.get('lapNumber', -1)) == total_lap_cnt:
-            return lap.get('lapCompletedTimestamp', None)
+        id = lap['carId']
 
-    return None
+        # create new driver and grab constants
+        if not id in drivers:
+            drivers[id] = Driver()
+            drivers[id].name = lap['driver']
 
+        # check for fastest lap
+        new_fastest = lap['lapTime']
+        if drivers[id].fastest_lap is None or new_fastest < drivers[id].fastest_lap:
+            drivers[id].fastest_lap = new_fastest
+
+
+        # update all values which should have the most recent state (of last lap)
+        if drivers[id].total_laps < lap['lapNumber']:
+            drivers[id].total_laps = lap['lapNumber']
+            drivers[id].place = lap['position']
+            drivers[id].finished_tm = lap['lapCompletedTimestamp']
+
+
+    return drivers
 
 
 
@@ -45,64 +75,63 @@ def main(json_file):
     json_data = json.loads(json_str)
 
 
+
     # atm we only care about lap times
     laps = json_data.get('laps', None)
-    
+
+
 
     if not laps:
         # this should never occur in a valid dataset
         return
 
+    drivers = map_drivers(laps)
+
+    driver_list = list(drivers.values())
+    driver_list.sort(key=lambda d: d.place)
 
 
-    # get all the participants
-    # (sorted by leader after 1st lap)
-    starter_laps = list(filter(lambda l: int(l['lapNumber'])==1, laps))
+    race_over_time = driver_list[0].finished_tm
 
 
-    # determin all 'finished' players
-    # this is done by fetching the finish time of the leader
-    # everyone who completes a lap after the leader is classed as 'finisher'
-    race_over_timestamp = get_race_over_timestamp(laps)
-
-    if not race_over_timestamp:
-        # the archives must be incomplete, no last lap existing
-        return
+    fastest_lap = None
+    fastest_driver = None
 
 
-    #  get all laps which are finished (including leaders laps)
-    finished_laps = list(filter(lambda lap: int(lap.get('lapCompletedTimestamp', -1) >= race_over_timestamp), laps))
+    print('Race results (driver must have completed at least 1 lap)')
+    i = 0
+    for d in driver_list:
+        is_finished = d.finished_tm >= race_over_time
+
+        if i < len(point_scale):
+            points = point_scale[i]
+        else:
+            points = 0
 
 
-    # would give sorted by 'who saw the flag first'
-    # finished_laps.sort(key=lambda lap: lap.get('lapCompletedTimestamp', -1))
+        if is_finished:
+            points += 1
+            finished_str = '\t '
+        else:
+            finished_str = '(DNF)'
 
 
-    # this will sort by lapNumber, cars with equal lapNumber are sorted by finishTime
-    # this functions, as the Companion outputs the data sorted by finishTime
-    finished_laps.sort(key=lambda lap: lap['position'])
+        # update fastest lap 
+        if fastest_lap is None or d.fastest_lap < fastest_lap:
+            fastest_lap = d.fastest_lap
+            fastest_driver = d
 
 
-    print('Race participants (must have completed 1 or more laps)')
-    # 1 offset for humans
-    i = 1
-    for starter in starter_laps:
-        print(str(i) + '. ' + starter.get('driver', 'N/A'))
+        print('{:d}. {:s} - {:d} pts. - {:s}\t @ {:s}'.format(d.place, finished_str, points, d.name.ljust(30), millis_to_laptime(d.fastest_lap)))
         i += 1
+        
 
 
-    print('\n')
-
-
-    print('Race finishers')
-    i = 1
-    for finisher in finished_laps:
-        print(str(i) + '. ' + finisher.get('driver', 'N/A'))
-        i += 1
-
-
-
-
+    print('\nFastest lap')
+    print('{:s} @ {:s}'.format(fastest_driver.name, millis_to_laptime(fastest_lap)))
+    
+    
+    
 
 
 if __name__ == '__main__':
