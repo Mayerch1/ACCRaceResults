@@ -7,8 +7,6 @@ from datetime import timedelta
 point_scale = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
 
 
-#TODO: drivers with DNF are assigned the last position they stopped at
-
 class Driver:
     total_laps = 0
     finished_tm = 0
@@ -31,7 +29,6 @@ def millis_to_laptime(millis: int):
     secs -= (mins*60) # subtract the minutes from seconds
     secs += td.microseconds/1_000_000 # add ms
 
-    
     output = '{:d}:{:06.3f}'.format(mins, secs)
     return output
 
