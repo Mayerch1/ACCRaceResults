@@ -12,6 +12,7 @@ class Team:
 
     def __init__(self):
         self.drivers = []
+        self.carId = 0 # used for internal processing
         self.raceNumber = -1
         self.defaultGridPosition = -1
         self.forcedCarModel = -1

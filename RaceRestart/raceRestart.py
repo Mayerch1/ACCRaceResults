@@ -4,6 +4,7 @@ import json
 import codecs
 import data
 from data import Driver, Team, Event
+import serverResult
 
 
 def dump_entrylist(event: Event):
@@ -14,6 +15,7 @@ def dump_entrylist(event: Event):
         out_file.writelines(json.dumps(ev_json, indent=4, sort_keys=True))
 
 
+
 def parse_server_result(file):
 
     if file is None or not os.path.exists(file):
@@ -22,37 +24,26 @@ def parse_server_result(file):
 
 
     ev = Event()
+
+    try:
+        with open(file, 'r') as json_utf8:
+            json_lines = json_utf8.readlines()
+            json_str = ' '.join(json_lines)
+            data = json.loads(json_str)
+    except json.JSONDecodeError:
+         with open(file, 'r', encoding='utf_16_le') as json_utf16:
+            json_lines = json_utf16.readlines()
+            json_str = ' '.join(json_lines)
+            data = json.loads(json_str)
+
+
+    event = serverResult.parse_data(data)
+        
+
+    return event
+
     
-    with open(file, 'r', encoding='utf_16_le') as json_file:
-        json_str = ' '.join(json_file.readlines())
-        data = json.loads(json_str)
-
-        ev.name = data['trackName']
-
-        leaders = data['sessionResult']['leaderBoardLines']
-
-        i = 1
-        for team_json in leaders:
-            car = team_json['car']
-
-            team = Team()
-            team.defaultGridPosition = i
-            team.forcedCarModel = car['carModel']
-            team.raceNumber = car['raceNumber']
-            
-            for driver in car['drivers']:
-                d = Driver()
-                d.firstName = driver['firstName']
-                d.lastName = driver['lastName']
-                d.shortName = driver['shortName']
-                d.playerID = driver['playerId']
-
-                team.drivers.append(d)
-
-            ev.teams.append(team)
-            i += 1
-
-    return ev
+    
         
 
 def search_results():
@@ -101,13 +92,12 @@ def main(file_path = None):
     if file_path is None:
         file_path = search_results()
 
-        if file_path is None:
+        if file_path is None or file_path.endswith('entrylist.json'):
             file_path = search_results_interactive()
 
         if file_path is None:
             return
-
-
+        
 
     print('using ' + file_path)
     event = parse_server_result(file_path)
