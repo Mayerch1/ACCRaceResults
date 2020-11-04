@@ -8,6 +8,7 @@ class Driver:
         self.driverCategory = 0
         self.playerID = ""
 
+
 class Team:
 
     def __init__(self):
@@ -20,6 +21,8 @@ class Team:
         self.isServerAdmin = 0
         self.ballastKg = 0
         self.configVersion = 1
+        self.lap_cnt = 0
+        self.cross_line_order = -1
 
 
 class Event(object):

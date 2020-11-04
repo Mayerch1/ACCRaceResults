@@ -11,8 +11,11 @@ def dump_entrylist(event: Event):
     ev_json = data._event_to_json(event)
     del ev_json['name']
 
+    
+    # sorting has no effect, as starting grid is saved in value of key 'defaultGridPosition'
+    # but keeping the order makes it easier for humans
     with open('entrylist.json', 'w') as out_file:
-        out_file.writelines(json.dumps(ev_json, indent=4, sort_keys=True))
+        out_file.writelines(json.dumps(ev_json, indent=4, sort_keys=False ))
 
 
 
@@ -43,8 +46,6 @@ def parse_server_result(file):
     return event
 
     
-    
-        
 
 def search_results():
     steam_dir = r'C:\Program Files (x86)\Steam\steamapps\common\Assetto Corsa Competizione Dedicated Server\server\results'
