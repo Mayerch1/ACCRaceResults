@@ -33,5 +33,7 @@ When started and a `RaceResult.json` is used, the script asks you on which lap y
 The output is saved into the file `entrylist.json` into the working directory. Any existing file will be overriden.
 
 * Copy the file into your `cfg/` folder of the server
+* remove the Qualifying session from the event (P->R)
 * start the server
-* make sure no-one sets a valid qualifying time
+
+Skipping the qualifying instead of removing it is only possible if no car on the grid sets a valid lap.
