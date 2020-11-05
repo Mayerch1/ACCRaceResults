@@ -97,6 +97,7 @@ def main(file_path = None):
             file_path = search_results_interactive()
 
         if file_path is None:
+            print('invalid path')
             return
         
 
@@ -122,3 +123,5 @@ if __name__ == '__main__':
 
 
     main(file_path)
+    print('press any key to exit...')
+    input()
