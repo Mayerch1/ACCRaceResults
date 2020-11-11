@@ -70,14 +70,14 @@ def search_results():
 
 
 def search_results_interactive():
-    print('Couldn\'t auto-detect the result file\nPlease enter the path:')
+    print('Couldn\'t auto-detect the result file\nPlease enter the path to file or folder:')
     input_str = input()
 
     if os.path.exists(input_str):
         if os.path.isfile(input_str) and input_str.endswith('.json'):
             return input_str
         else:
-            files = os.listdir(input_str)
+            files = sorted(os.listdir(input_str), reverse=True)
             files = list(filter(lambda x: x.endswith('.json'), files))
             if files:
                 return input_str + '/' + files[0]
